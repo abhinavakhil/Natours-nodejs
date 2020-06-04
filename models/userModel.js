@@ -123,7 +123,7 @@ userSchema.methods.correctPasswordResetToken = function () {
     .createHash('sha256')
     .update(resetToken)
     .digest('hex'); // how we will add this to db so that we can verify the user so create 2 variable in schema  passwordResetToken: String,passwordResetExpires: Date
-  console.log({ resetToken }, this.passwordResetToken);
+  // console.log({ resetToken }, this.passwordResetToken);
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // valid only for 10 mins
   return resetToken;
 };
