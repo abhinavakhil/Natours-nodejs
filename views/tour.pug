@@ -1,0 +1,101 @@
+extends base
+include _reviewCard
+
+block append head
+  script(src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js')
+  link(href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet')
+//- mixin for quickFacts
+mixin overviewBox(label, text, icon)
+  .overview-box__detail  
+     svg.overview-box__icon
+       use(xlink:href=`/img/icons.svg#icon-${icon}`)
+     span.overview-box__label= label
+     span.overview-box__text= text      
+
+block content
+  section.section-header
+    .header__hero
+        .header__hero-overlay &nbsp;
+        img.header__hero-img(src=`/img/tours/${tour.imageCover}`, alt=`${tour.name}`)
+
+    .heading-box
+        h1.heading-primary
+            span=`${tour.name} tour`
+        .heading-box__group
+            .heading-box__detail
+                svg.heading-box__icon
+                    use(xlink:href='/img/icons.svg#icon-clock')
+                span.heading-box__text=`${tour.duration} days`
+            .heading-box__detail
+                svg.heading-box__icon
+                    use(xlink:href='/img/icons.svg#icon-map-pin')
+                span.heading-box__text=tour.startLocation.description
+
+  section.section-description
+    .overview-box
+        div
+            .overview-box__group
+                h2.heading-secondary.ma-bt-lg Quick facts
+                //- writting javascript code with - code
+                - const date = tour.startDates[0].toLocaleString('en-us', {month: 'long', year: 'numeric'})
+                //- using mixen-> +mixenname()
+                +overviewBox('Next date',date,'calendar')
+                +overviewBox('Difficulty',tour.difficulty,'trending-up')
+                +overviewBox('Participants',`${tour.maxGroupSize} people`,'user')
+                +overviewBox('Rating',`${tour.ratingsAverage} / 5`,'star')
+
+            .overview-box__group
+                h2.heading-secondary.ma-bt-lg Your tour guides
+                //- lopping in tour.guides and populated data is not in db but it is available behind the secene with the help of mongoose so it will work 
+                each guide in tour.guides
+                  .overview-box__detail
+                    img.overview-box__img(src=`/img/users/${guide.photo}`, alt=`${guide.name}`)
+                    //- using if else condirons to convert guide text to tour guide text
+                    - if (guide.role === 'lead-guide')
+                      span.overview-box__label Lead guide
+                    - if (guide.role === 'guide')  
+                      span.overview-box__label Tour guide
+                      
+                    span.overview-box__text= guide.name  
+
+    .description-box
+        h2.heading-secondary.ma-bt-lg=`About ${tour.name} tour`
+        //-  in tour description field has a new line character so here also we are going to split the string from newline character
+        //-  lets use javascript for that
+        - const paragraphs = tour.description.split('\n');
+        //- so here paragraph is an array and we just need to loop through this 
+        each p in paragraphs
+          p.description__text=p
+
+  section.section-pictures
+    //- i is for index and it start from  0 but we need from 1 so add i+1
+    each img,i in  tour.images
+      .picture-box
+        img.picture-box__img(src=`/img/tours/${img}`, alt=`The Park Camper Tour ${i+1}`,class=`picture-box__img--${i+1}`)
+    
+  section.section-map
+    //- what we are doing is that we are sending tour location in string format in data-locations variable which we will use in javascript
+    #map(data-locations=`${JSON.stringify(tour.locations)}`) 
+
+  section.section-reviews
+    .reviews
+      each review in tour.reviews      
+        +reviewCard(review)
+            
+
+  section.section-cta
+    .cta
+        .cta__img.cta__img--logo
+            img(src='/img/logo-white.png', alt='Natours logo')
+        img.cta__img.cta__img--1(src=`/img/tours/${tour.images[1]}`, alt='Tour picture')
+        img.cta__img.cta__img--2(src=`/img/tours/${tour.images[2]}`, alt='Tour Picture')
+        .cta__content
+            h2.heading-secondary What are you waiting for?
+            p.cta__text= `${tour.duration} days. 1 adventure. Infinite memories. Make it yours today!`
+            
+            //-  if user is there (loggedin) then onluy book tour using stripe 
+            if user
+              button.btn.btn--green.span-all-rows#book-tour(data-tour-id=`${tour.id}`) Book tour now!    
+            //- else redirect to login
+            else 
+              a.btn.btn--green.span-all-rows(href='/login') Log in to book tour
